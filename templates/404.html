@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ code|default(404) }} – SunSync{% endblock %}
+{% block content %}
+<div class="stars"></div>
+<div style="min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;z-index:1">
+  <div style="font-size:96px;margin-bottom:16px;animation:float 3s ease-in-out infinite">
+    {{ '🌌' if not code or code == 404 else '💥' }}
+  </div>
+  <h1 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:72px;font-weight:800;
+    background:linear-gradient(135deg,var(--p3),var(--cyan));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px">
+    {{ code|default(404) }}
+  </h1>
+  <p style="font-size:18px;color:var(--text-muted);max-width:400px;line-height:1.6;margin-bottom:32px">
+    {{ msg|default("Lost in space. This page drifted into a black hole.") }}
+  </p>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <a href="{{ url_for('home') }}" class="btn btn-primary">🏠 Go Home</a>
+    {% if session.user_id %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">⚡ Dashboard</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Weekly Report – SunSync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Weekly Report 📅</h1>
+  <p class="page-subtitle">Your last 4 weeks at a glance</p>
+</div>
+
+<!-- Weekly Comparison Chart -->
+<div class="card animate-in" style="margin-bottom:24px">
+  <div class="section-title">📈 4-Week Study Comparison</div>
+  <div class="chart-wrap" style="height:260px">
+    <canvas id="weeklyChart"></canvas>
+  </div>
+</div>
+
+<!-- Week Cards -->
+<div class="grid-2">
+  {% for w in weeks %}
+  <div class="card animate-in" style="border-left:3px solid var(--{{ 'p1' if loop.index==1 else 'blue' if loop.index==2 else 'green' if loop.index==3 else 'orange' }})">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px">{{ w.label }}</div>
+        {% if loop.index == 1 %}<span class="badge badge-purple">This Week</span>{% endif %}
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:28px;
+          background:linear-gradient(135deg,var(--p3),var(--cyan));
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent">
+          {{ w.minutes }}min
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span style="color:var(--text-muted)">Sessions</span>
+        <span style="font-weight:600">{{ w.sessions }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span style="color:var(--text-muted)">Top Subject</span>
+        <span style="font-weight:600;color:var(--p3)">{{ w.top_subject }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span style="color:var(--text-muted)">Dominant Mood</span>
+        <span style="font-weight:600">
+          {% if w.top_mood == 'Happy' %}😊 Happy
+          {% elif w.top_mood == 'Focused' %}🎯 Focused
+          {% elif w.top_mood == 'Tired' %}😴 Tired
+          {% elif w.top_mood == 'Stressed' %}😵 Stressed
+          {% elif w.top_mood == 'Relaxed' %}😌 Relaxed
+          {% else %}—{% endif %}
+        </span>
+      </div>
+      <div class="progress-bar" style="margin-top:4px">
+        <div class="progress-fill" style="width:{{ [w.minutes / 600 * 100, 100]|min }}%"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);text-align:right">
+        {{ [w.minutes / 600 * 100, 100]|min|round }}% of 10h goal
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div style="display:flex;justify-content:center;gap:14px;margin-top:24px">
+  <a href="{{ url_for('analytics') }}" class="btn btn-secondary">📊 Full Analytics</a>
+  <a href="{{ url_for('focus') }}" class="btn btn-primary">🚀 Start Studying</a>
+</div>
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const weeks = {{ weeks_json|safe }};
+buildBarChart(
+  'weeklyChart',
+  weeks.map(w => w.label.replace('Week of ','')),
+  weeks.map(w => w.minutes),
+  '#8b5cf6','#3b82f6'
+);
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard – SunSync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Leaderboard 🏆</h1>
+  <p class="page-subtitle">Top students ranked by total study time</p>
+</div>
+
+<div class="grid-2">
+  <div>
+    <div class="card card-glow animate-in">
+      <div class="section-title">🌍 Global Rankings</div>
+
+      {% for u in board %}
+      <div class="lb-row animate-in" style="padding:14px 0">
+        <!-- Rank -->
+        <div style="width:40px;text-align:center;flex-shrink:0">
+          {% if loop.index == 1 %}
+            <span style="font-size:28px">🥇</span>
+          {% elif loop.index == 2 %}
+            <span style="font-size:28px">🥈</span>
+          {% elif loop.index == 3 %}
+            <span style="font-size:28px">🥉</span>
+          {% else %}
+            <span class="lb-rank" style="color:var(--text-muted)">{{ loop.index }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Avatar -->
+        <span style="font-size:28px">{{ u.avatar or '🎓' }}</span>
+
+        <!-- Name & streak -->
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px">
+            {{ u.username }}
+            {% if u.username == current_user %}
+            <span class="badge badge-purple" style="font-size:10px">you</span>
+            {% endif %}
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <span style="font-size:12px;color:var(--orange)">🔥 {{ u.streak_count }} day streak</span>
+          </div>
+        </div>
+
+        <!-- Hours -->
+        <div style="text-align:right">
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;
+            background:linear-gradient(135deg,var(--p3),var(--cyan));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent">
+            {{ ((u.total_study_time or 0)/3600)|round(1) }}h
+          </div>
+          <div style="font-size:11px;color:var(--text-muted)">total</div>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if not board %}
+      <div style="text-align:center;padding:40px;color:var(--text-dim)">
+        <div style="font-size:48px;margin-bottom:12px">🏆</div>
+        No rankings yet. Be the first to study!
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    <div class="card animate-in" style="margin-bottom:20px">
+      <div class="section-title">🔥 Streak Champions</div>
+      {% for u in board|sort(attribute='streak_count', reverse=True) %}
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:22px">{{ u.avatar or '🎓' }}</span>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">{{ u.username }}</div>
+        </div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;color:var(--orange)">
+          🔥 {{ u.streak_count }} days
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card animate-in">
+      <div class="section-title">💡 How Rankings Work</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <span style="font-size:20px">⏱️</span>
+          <div><div style="font-weight:600;font-size:14px">Study Time</div><div style="font-size:12px;color:var(--text-muted)">Total hours studied across all sessions</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <span style="font-size:20px">🔥</span>
+          <div><div style="font-weight:600;font-size:14px">Streak Bonus</div><div style="font-size:12px;color:var(--text-muted)">Daily login streaks multiply your score</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <span style="font-size:20px">⚡</span>
+          <div><div style="font-weight:600;font-size:14px">Challenges</div><div style="font-size:12px;color:var(--text-muted)">Complete daily challenges to earn extra points</div></div>
+        </div>
+      </div>
+      <a href="{{ url_for('focus') }}" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px">
+        🚀 Start Studying Now
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

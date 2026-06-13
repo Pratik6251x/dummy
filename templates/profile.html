@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Profile – SunSync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Profile 👤</h1>
+  <p class="page-subtitle">Your personal study identity</p>
+</div>
+
+<div class="grid-2">
+  <!-- Profile Card -->
+  <div>
+    <div class="card card-glow animate-in" style="margin-bottom:20px">
+      <div class="profile-header">
+        <div class="profile-avatar" id="avatar-preview" onclick="var w=document.getElementById('avatar-picker-wrap');w.style.display=w.style.display==='none'||w.style.display===''?'block':'none'">
+          {{ user.avatar or '🎓' }}
+        </div>
+        <div>
+          <div class="profile-name">{{ user.username }}</div>
+          <div class="profile-email">{{ user.email }}</div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <span class="badge badge-purple">🔥 {{ user.streak_count or 0 }} day streak</span>
+            <span class="badge badge-blue">📚 {{ total_sessions }} sessions</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Avatar Picker -->
+      <div id="avatar-picker-wrap" style="display:none;margin-bottom:16px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Choose your avatar</div>
+        <div class="avatar-picker">
+          {% for emoji in ['🎓','👨‍💻','👩‍💻','🧑‍🔬','👨‍🎨','🦸','🧙','🦊','🐺','🦅','🌙','⚡','🎯','🔥','💎','🚀'] %}
+          <span class="avatar-option {{ 'selected' if user.avatar == emoji else '' }}"
+                onclick="selectAvatar(this, '{{ emoji }}')">{{ emoji }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <form method="POST">
+        <input type="hidden" name="avatar" id="avatar-input" value="{{ user.avatar or '🎓' }}"/>
+        <div class="form-group">
+          <label class="form-label">Bio</label>
+          <textarea class="form-textarea" name="bio" placeholder="Tell us about yourself... your study goals, subjects, university...">{{ user.bio or '' }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          💾 Save Profile
+        </button>
+        <a href="{{ url_for('account') }}" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:10px">
+          ✏️ Edit Username / Email / Password
+        </a>
+      </form>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div>
+    <div class="card animate-in" style="margin-bottom:20px">
+      <div class="section-title">📊 Your Stats</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span style="color:var(--text-muted)">Total Study Time</span>
+            <span style="color:var(--p3);font-weight:600">{{ ((user.total_study_time or 0)/3600)|round(1) }}h</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{{ [(user.total_study_time or 0)/360, 100]|min }}%"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span style="color:var(--text-muted)">Study Streak</span>
+            <span style="color:var(--orange);font-weight:600">{{ user.streak_count or 0 }} / 30 days</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{{ [(user.streak_count or 0) / 30 * 100, 100]|min }}%;background:linear-gradient(90deg,var(--orange),var(--pink))"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span style="color:var(--text-muted)">Sessions Completed</span>
+            <span style="color:var(--blue);font-weight:600">{{ total_sessions }}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{{ [total_sessions / 100 * 100, 100]|min }}%;background:linear-gradient(90deg,var(--blue),var(--cyan))"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card animate-in">
+      <div class="section-title">🏅 Achievements</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        {% set streak = user.streak_count or 0 %}
+        {% set hours  = (user.total_study_time or 0) / 3600 %}
+        <div style="padding:12px 16px;border-radius:12px;background:{{ 'rgba(245,158,11,.15)' if streak >= 1 else 'var(--surface)' }};border:1px solid {{ 'rgba(245,158,11,.3)' if streak >= 1 else 'var(--border)' }};opacity:{{ 1 if streak >= 1 else 0.4 }}">
+          <div style="font-size:24px">🔥</div><div style="font-size:11px;color:var(--text-muted)">First Login</div>
+        </div>
+        <div style="padding:12px 16px;border-radius:12px;background:{{ 'rgba(139,92,246,.15)' if hours >= 1 else 'var(--surface)' }};border:1px solid {{ 'rgba(139,92,246,.3)' if hours >= 1 else 'var(--border)' }};opacity:{{ 1 if hours >= 1 else 0.4 }}">
+          <div style="font-size:24px">⚡</div><div style="font-size:11px;color:var(--text-muted)">1h Studied</div>
+        </div>
+        <div style="padding:12px 16px;border-radius:12px;background:{{ 'rgba(16,185,129,.15)' if streak >= 7 else 'var(--surface)' }};border:1px solid {{ 'rgba(16,185,129,.3)' if streak >= 7 else 'var(--border)' }};opacity:{{ 1 if streak >= 7 else 0.4 }}">
+          <div style="font-size:24px">🌟</div><div style="font-size:11px;color:var(--text-muted)">7-Day Streak</div>
+        </div>
+        <div style="padding:12px 16px;border-radius:12px;background:{{ 'rgba(6,182,212,.15)' if hours >= 10 else 'var(--surface)' }};border:1px solid {{ 'rgba(6,182,212,.3)' if hours >= 10 else 'var(--border)' }};opacity:{{ 1 if hours >= 10 else 0.4 }}">
+          <div style="font-size:24px">🎓</div><div style="font-size:11px;color:var(--text-muted)">10h Club</div>
+        </div>
+        <div style="padding:12px 16px;border-radius:12px;background:{{ 'rgba(245,158,11,.15)' if streak >= 30 else 'var(--surface)' }};border:1px solid {{ 'rgba(245,158,11,.3)' if streak >= 30 else 'var(--border)' }};opacity:{{ 1 if streak >= 30 else 0.4 }}">
+          <div style="font-size:24px">👑</div><div style="font-size:11px;color:var(--text-muted)">30-Day King</div>
+        </div>
+        <div style="padding:12px 16px;border-radius:12px;background:{{ 'rgba(236,72,153,.15)' if hours >= 100 else 'var(--surface)' }};border:1px solid {{ 'rgba(236,72,153,.3)' if hours >= 100 else 'var(--border)' }};opacity:{{ 1 if hours >= 100 else 0.4 }}">
+          <div style="font-size:24px">💎</div><div style="font-size:11px;color:var(--text-muted)">100h Legend</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Focus Mode – SunSync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Focus Mode 🎯</h1>
+  <p class="page-subtitle">Deep work sessions powered by sunrise energy</p>
+</div>
+
+<div class="focus-container">
+
+  <!-- Mode Tabs -->
+  <div class="timer-mode-tabs">
+    <button class="timer-mode-tab" data-mode="short"  onclick="setMode('short')">☀️ Focus 30</button>
+    <button class="timer-mode-tab" data-mode="medium" onclick="setMode('medium')">🌤 Deep Work 45</button>
+    <button class="timer-mode-tab" data-mode="long"   onclick="setMode('long')">🌅 Marathon 2h</button>
+  </div>
+
+  <!-- Timer Ring -->
+  <div class="timer-ring-wrap">
+    <svg class="timer-svg" viewBox="0 0 280 280">
+      <defs>
+        <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#f97316"/>
+          <stop offset="100%" stop-color="#fbbf24"/>
+        </linearGradient>
+      </defs>
+      <circle class="timer-track"    cx="140" cy="140" r="120"/>
+      <circle class="timer-progress" cx="140" cy="140" r="120" id="timer-ring"/>
+    </svg>
+    <div class="timer-display">
+      <div class="timer-time" id="timer-time">30:00</div>
+      <div class="timer-label" id="timer-label">Ready to focus</div>
+    </div>
+  </div>
+
+  <!-- Subject Input -->
+  <div class="subject-row">
+    <input class="form-input" id="subject-input" placeholder="📚 What are you studying? (e.g. Math, Physics)" style="flex:1"/>
+  </div>
+
+  <!-- Controls -->
+  <div class="timer-controls">
+    <button class="btn btn-secondary" onclick="stopTimer()">⏹ Stop</button>
+    <button class="btn btn-primary btn-lg" id="start-btn" onclick="startTimer()">▶ Start Focus</button>
+    <button class="btn btn-secondary" onclick="setMode(currentMode)">↺ Reset</button>
+  </div>
+
+  <!-- AI Tips Box -->
+  <div class="ai-tips-box" id="ai-tips-box">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="font-size:22px">🤖</span>
+      <div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px">AI Study Coach</div>
+        <div style="font-size:12px;color:var(--text-muted)">Log your mood to get personalised tips</div>
+      </div>
+      <a href="{{ url_for('mood') }}" class="btn btn-secondary btn-sm" style="margin-left:auto">
+        Log Mood
+      </a>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      {% for mood, emoji in [('Happy','😊'),('Focused','🎯'),('Tired','😴'),('Stressed','😵'),('Relaxed','😌')] %}
+      <button class="btn btn-ghost btn-sm" onclick="getAITips('{{ mood }}')">{{ emoji }} {{ mood }}</button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Session Stats -->
+  <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+    <div style="text-align:center;padding:14px 24px;background:var(--surface);border:1px solid var(--border);border-radius:14px">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em">Mode</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:var(--p3)" id="mode-display">☀️ Focus 30</div>
+    </div>
+    <div style="text-align:center;padding:14px 24px;background:var(--surface);border:1px solid var(--border);border-radius:14px">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em">Status</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:var(--green)" id="status-display">Ready</div>
+    </div>
+  </div>
+
+</div>
+
+{% block scripts %}
+<script>
+const modeLabels = {
+  short:  '☀️ Focus 30',
+  medium: '🌤 Deep Work 45',
+  long:   '🌅 Marathon 2h',
+};
+
+document.getElementById('start-btn').onclick = function() {
+  startTimer();
+  document.getElementById('timer-label').textContent = 'Stay focused…';
+  document.getElementById('status-display').textContent = 'Focusing 🔥';
+  document.getElementById('status-display').style.color = 'var(--orange)';
+};
+
+const _setMode = setMode;
+window.setMode = function(mode) {
+  _setMode(mode);
+  const d = document.getElementById('mode-display');
+  if (d) d.textContent = modeLabels[mode] || mode;
+  document.getElementById('timer-label').textContent = 'Ready to focus';
+  document.getElementById('status-display').textContent = 'Ready';
+  document.getElementById('status-display').style.color = 'var(--green)';
+};
+
+// Apply saved default from server
+(function() {
+  const meta = document.querySelector('meta[name="user-timer-default"]');
+  let def = 'short';
+  if (meta) {
+    const mins = parseInt(meta.content, 10);
+    if (mins === 45) def = 'medium';
+    else if (mins === 120) def = 'long';
+  }
+  const stored = localStorage.getItem('ms_default_timer');
+  window.setMode(stored || def);
+})();
+</script>
+{% endblock %}
+{% endblock %}

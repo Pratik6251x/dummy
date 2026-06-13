@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}SunSync – Smart Productivity{% endblock %}
+{% block content %}
+<div class="stars"></div>
+<div class="home-hero" style="position:relative;z-index:1">
+
+  <div class="hero-badge animate-in">
+    <span>🌅</span> Smart Productivity for Students
+  </div>
+
+  <h1 class="hero-title animate-in" style="animation-delay:.08s">
+    Study Smarter.<br>Feel Better.
+  </h1>
+
+  <p class="hero-sub animate-in" style="animation-delay:.16s">
+    SunSync tracks your mood, focuses your mind, and builds habits that actually stick. Your cosmic companion for academic success.
+  </p>
+
+  <div class="hero-cta animate-in" style="animation-delay:.24s">
+    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">🚀 Get Started Free</a>
+    <a href="{{ url_for('login') }}" class="btn btn-secondary btn-lg">Log In</a>
+  </div>
+
+  <div class="hero-features animate-in" style="animation-delay:.36s">
+    <div class="hero-feature"><span>🎯</span><span>Focus Timer</span></div>
+    <div class="hero-feature"><span>💜</span><span>Mood Tracking</span></div>
+    <div class="hero-feature"><span>📊</span><span>Analytics</span></div>
+    <div class="hero-feature"><span>🔥</span><span>Study Streaks</span></div>
+    <div class="hero-feature"><span>🏆</span><span>Leaderboard</span></div>
+    <div class="hero-feature"><span>🤖</span><span>AI Tips</span></div>
+  </div>
+
+  <!-- Feature Cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:960px;width:100%;margin-top:80px">
+
+    <div class="card animate-in" style="animation-delay:.4s;text-align:left">
+      <div style="font-size:36px;margin-bottom:14px">🍅</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:8px">Pomodoro Timer</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6">25-minute focus sprints with smart breaks. Built-in session logging keeps your progress visible.</div>
+    </div>
+
+    <div class="card animate-in" style="animation-delay:.46s;text-align:left">
+      <div style="font-size:36px;margin-bottom:14px">🧠</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:8px">AI Study Tips</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6">Log your mood and get personalized study recommendations. Tired? Stressed? We adapt your plan.</div>
+    </div>
+
+    <div class="card animate-in" style="animation-delay:.52s;text-align:left">
+      <div style="font-size:36px;margin-bottom:14px">📈</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:8px">Deep Analytics</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6">Weekly charts, subject breakdowns, mood trends. See exactly where your time goes.</div>
+    </div>
+
+    <div class="card animate-in" style="animation-delay:.58s;text-align:left">
+      <div style="font-size:36px;margin-bottom:14px">⚡</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:8px">Daily Challenges</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6">Gamified micro-challenges keep you motivated every single day. Earn points, build streaks.</div>
+    </div>
+
+    <div class="card animate-in" style="animation-delay:.64s;text-align:left">
+      <div style="font-size:36px;margin-bottom:14px">🏆</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:8px">Leaderboard</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6">See how you rank against fellow students. Friendly competition drives results.</div>
+    </div>
+
+    <div class="card animate-in" style="animation-delay:.70s;text-align:left">
+      <div style="font-size:36px;margin-bottom:14px">🎯</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:8px">Weekly Goals</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6">Set study hour targets, track progress in real time. Stay accountable every week.</div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:60px;text-align:center;color:var(--text-dim);font-size:13px">
+    Free forever · No credit card · Built for students
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Edit Account – SunSync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Edit Account ✏️</h1>
+  <p class="page-subtitle">Update your login details and focus preferences</p>
+</div>
+
+<div style="max-width:620px;margin:0 auto">
+
+  <!-- Account Details Card -->
+  <div class="card card-glow animate-in" style="margin-bottom:20px">
+    <div class="settings-title">👤 Account Details</div>
+
+    <form method="POST" id="account-form" novalidate>
+      <div class="form-group">
+        <label class="form-label">Username <span style="color:var(--red)">*</span></label>
+        <input class="form-input" name="username" id="inp-username"
+               value="{{ user.username }}" minlength="3" required
+               oninput="validateField('username', this.value, v => v.length >= 3, 'At least 3 characters required')"/>
+        <div class="field-error" id="err-username"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address <span style="color:var(--red)">*</span></label>
+        <input class="form-input" name="email" id="inp-email" type="email"
+               value="{{ user.email }}" required
+               oninput="validateField('email', this.value, v => v.includes('@') && v.includes('.'), 'Enter a valid email address')"/>
+        <div class="field-error" id="err-email"></div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:24px 0"/>
+      <div class="settings-title" style="font-size:15px;border-bottom:none;padding-bottom:0;margin-bottom:6px">🔑 Change Password</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:18px">Leave blank to keep your current password.</p>
+
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input class="form-input" name="password" id="inp-password" type="password"
+               placeholder="Minimum 6 characters"
+               oninput="validateField('password', this.value, v => v === '' || v.length >= 6, 'At least 6 characters required'); validateField('confirm', document.getElementById('inp-confirm').value, v => v === this.value || v === '', 'Passwords must match')"/>
+        <div class="field-error" id="err-password"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Confirm New Password</label>
+        <input class="form-input" name="confirm_password" id="inp-confirm" type="password"
+               placeholder="Repeat new password"
+               oninput="validateField('confirm', this.value, v => v === document.getElementById('inp-password').value || v === '', 'Passwords must match')"/>
+        <div class="field-error" id="err-confirm"></div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:24px">
+        <button type="submit" class="btn btn-primary" id="save-btn" style="flex:1;justify-content:center">
+          💾 Save Changes
+        </button>
+        <a href="{{ url_for('profile') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Timer Default Card -->
+  <div class="card animate-in" style="margin-bottom:20px">
+    <div class="settings-title">⏱ Default Focus Timer</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:18px">
+      Choose which session length auto-selects when you open Focus Mode.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      {% for label, mins in [('☀️ Focus 30', 30), ('🌤 Deep Work 45', 45), ('🌅 Marathon 2h', 120)] %}
+      <button class="btn {% if (user.default_timer or 30) == mins %}btn-primary{% else %}btn-secondary{% endif %} btn-sm"
+              onclick="setTimerDefault({{ mins }}, this)"
+              data-mins="{{ mins }}">
+        {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+    <div id="timer-saved-msg" style="font-size:12px;color:var(--green);margin-top:10px;opacity:0;transition:opacity .3s"></div>
+  </div>
+
+  <!-- Notifications Card -->
+  <div class="card animate-in">
+    <div class="settings-title">🔔 Notifications</div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Push Notifications</div>
+        <div class="toggle-desc">Receive study reminder notifications</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="notif-toggle" {{ 'checked' if user.notifications }} onchange="saveNotif(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div id="notif-msg" style="font-size:12px;color:var(--green);margin-top:8px;opacity:0;transition:opacity .3s"></div>
+  </div>
+
+</div>
+
+{% block scripts %}
+<script>
+function validateField(name, value, check, msg) {
+  const errEl = document.getElementById('err-' + name);
+  const inp   = document.getElementById('inp-' + name);
+  if (inp && !check(value)) {
+    inp.style.borderColor = 'var(--red)';
+    if (errEl) errEl.textContent = msg;
+    return false;
+  } else {
+    if (inp) inp.style.borderColor = '';
+    if (errEl) errEl.textContent = '';
+    return true;
+  }
+}
+
+document.getElementById('account-form').addEventListener('submit', function(e) {
+  const btn = document.getElementById('save-btn');
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  setTimeout(() => { btn.disabled = false; btn.textContent = '💾 Save Changes'; }, 4000);
+});
+
+async function setTimerDefault(mins, btn) {
+  try {
+    const res = await fetch('/api/set_timer_default', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ minutes: mins })
+    });
+    if (res.ok) {
+      document.querySelectorAll('[data-mins]').forEach(b => {
+        b.className = b.className.replace('btn-primary', 'btn-secondary');
+      });
+      btn.className = btn.className.replace('btn-secondary', 'btn-primary');
+      const modeMap = { 30: 'short', 45: 'medium', 120: 'long' };
+      localStorage.setItem('ms_default_timer', modeMap[mins] || 'short');
+      const msg = document.getElementById('timer-saved-msg');
+      msg.textContent = `✅ Default set to ${mins === 120 ? '2-hour Marathon' : mins + ' min'}`;
+      msg.style.opacity = '1';
+      setTimeout(() => msg.style.opacity = '0', 2500);
+    }
+  } catch(err) { console.error(err); }
+}
+
+async function saveNotif(checked) {
+  const formData = new FormData();
+  formData.append('theme', 'auto');
+  if (checked) formData.append('notifications', '1');
+  try {
+    await fetch('/settings', { method: 'POST', body: formData });
+    const msg = document.getElementById('notif-msg');
+    msg.textContent = checked ? '✅ Notifications enabled' : '✅ Notifications disabled';
+    msg.style.opacity = '1';
+    setTimeout(() => msg.style.opacity = '0', 2000);
+  } catch(err) { console.error(err); }
+}
+</script>
+<style>
+.field-error { font-size: 11px; color: var(--red); margin-top: 5px; min-height: 16px; }
+</style>
+{% endblock %}
+{% endblock %}

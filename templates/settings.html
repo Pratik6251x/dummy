@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Settings – SunSync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Settings ⚙️</h1>
+  <p class="page-subtitle">Customise your SunSync experience</p>
+</div>
+
+<div class="grid-2">
+  <!-- Appearance & Preferences -->
+  <div>
+    <div class="card animate-in" style="margin-bottom:20px">
+      <div class="settings-title">🎨 Appearance</div>
+      <form method="POST">
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Theme</div>
+            <div class="toggle-desc">Choose your preferred color mode</div>
+          </div>
+          <select class="form-select" name="theme" style="width:140px" onchange="applyTheme(this.value);localStorage.setItem('ms_theme',this.value)">
+            <option value="dark"  {{ 'selected' if user.theme == 'dark'  }}>🌙 Dark</option>
+            <option value="light" {{ 'selected' if user.theme == 'light' }}>☀️ Light</option>
+            <option value="auto"  {{ 'selected' if user.theme == 'auto' or not user.theme }}>🔄 Auto</option>
+          </select>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Push Notifications</div>
+            <div class="toggle-desc">Receive reminder notifications</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" name="notifications" {{ 'checked' if user.notifications }}>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" style="margin-top:16px">Save Preferences</button>
+      </form>
+    </div>
+
+    <div class="card animate-in">
+      <div class="settings-title">🔒 Account</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Username</div>
+          <div class="toggle-desc">{{ user.username }}</div>
+        </div>
+        <span class="badge badge-purple">Active</span>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Email</div>
+          <div class="toggle-desc">{{ user.email }}</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Member Since</div>
+          <div class="toggle-desc">{{ user.created_at[:10] if user.created_at else '—' }}</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <a href="{{ url_for('profile') }}"  class="btn btn-secondary btn-sm">🖼 Edit Profile</a>
+        <a href="{{ url_for('account') }}"  class="btn btn-primary btn-sm">✏️ Edit Account</a>
+        <a href="{{ url_for('logout') }}"   class="btn btn-danger btn-sm">🚪 Logout</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reminders -->
+  <div>
+    <div class="card animate-in" style="margin-bottom:20px">
+      <div class="settings-title">🔔 Study Reminders</div>
+
+      <!-- Add Reminder -->
+      <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);border-radius:14px;padding:16px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--p3)">Add New Reminder</div>
+        <div class="form-group">
+          <input class="form-input" id="rem-title" placeholder="e.g. Morning Study Session"/>
+        </div>
+        <div class="form-group">
+          <input class="form-input" id="rem-time" type="time"/>
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Days</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
+              <input type="checkbox" class="day-check" value="{{ day }}" {{ 'checked' if day not in ['Sat','Sun'] }}/> {{ day }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addReminder()">+ Add Reminder</button>
+      </div>
+
+      <!-- Existing Reminders -->
+      {% if reminders %}
+        {% for r in reminders %}
+        <div class="reminder-item">
+          <span style="font-size:20px">🔔</span>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">{{ r.title }}</div>
+            <div style="font-size:12px;color:var(--text-muted)">{{ r.days }}</div>
+          </div>
+          <div class="reminder-time">{{ r.reminder_time }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:20px;color:var(--text-dim);font-size:14px">
+          No reminders set. Add one above!
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card animate-in">
+      <div class="settings-title">📊 Data & Privacy</div>
+      <div style="color:var(--text-muted);font-size:13px;line-height:1.7;margin-bottom:16px">
+        Your study data is stored locally on this server. SunSync does not share your data with third parties. All analytics are for personal use only.
+      </div>
+      <div style="display:flex;gap:10px">
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary btn-sm">📈 View My Data</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

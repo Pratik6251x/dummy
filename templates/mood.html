@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Mood Tracking – SunSync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Mood Tracker 💜</h1>
+  <p class="page-subtitle">How are you feeling right now?</p>
+</div>
+
+<div class="grid-2">
+  <!-- Mood Log Form -->
+  <div>
+    <div class="card animate-in" style="margin-bottom:20px">
+      <div class="section-title">Select Your Mood</div>
+      <form method="POST" id="mood-form">
+        <input type="hidden" name="mood" id="mood-input" required/>
+        <div class="mood-selector">
+          {% for mood, emoji, tip in [
+            ('Happy',   '😊', 'Feeling great!'),
+            ('Focused', '🎯', 'In the zone'),
+            ('Tired',   '😴', 'Need rest'),
+            ('Stressed','😵', 'Overwhelmed'),
+            ('Relaxed', '😌', 'Calm & chill')
+          ] %}
+          <div class="mood-btn" onclick="selectMood(this, '{{ mood }}')">
+            <span class="mood-emoji">{{ emoji }}</span>
+            <span class="mood-name">{{ mood }}</span>
+            <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">{{ tip }}</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group" style="margin-top:8px">
+          <label class="form-label">Notes (optional)</label>
+          <textarea class="form-textarea" name="notes" placeholder="What's on your mind? Any context about your mood..." style="min-height:80px"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          💾 Save Mood
+        </button>
+      </form>
+    </div>
+
+    <!-- AI Tips based on mood -->
+    <div class="card animate-in ai-tips-box" id="ai-tips-box">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:24px">🤖</span>
+        <div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px">AI Study Coach</div>
+          <div style="font-size:12px;color:var(--text-muted)">Select a mood above to get personalised tips</div>
+        </div>
+      </div>
+      <div style="color:var(--text-dim);font-size:14px;text-align:center;padding:16px">
+        ← Select your mood to reveal study tips
+      </div>
+    </div>
+  </div>
+
+  <!-- Mood History -->
+  <div>
+    <div class="card animate-in" style="margin-bottom:20px">
+      <div class="section-title">📊 Mood Distribution</div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="moodChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card animate-in">
+      <div class="section-title">🕐 Mood History</div>
+      {% if mood_history %}
+        {% for m in mood_history %}
+        <div class="mood-history-item">
+          <span class="mood-history-emoji">
+            {% if m.mood == 'Happy' %}😊
+            {% elif m.mood == 'Focused' %}🎯
+            {% elif m.mood == 'Tired' %}😴
+            {% elif m.mood == 'Stressed' %}😵
+            {% elif m.mood == 'Relaxed' %}😌
+            {% else %}💜{% endif %}
+          </span>
+          <div>
+            <div class="mood-history-name">{{ m.mood }}</div>
+            {% if m.notes %}
+            <div class="mood-history-note">{{ m.notes[:60] }}{% if m.notes|length > 60 %}...{% endif %}</div>
+            {% endif %}
+          </div>
+          <div class="mood-history-time">{{ m.timestamp[:16].replace('T',' ') }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:24px;color:var(--text-dim)">
+          <div style="font-size:32px;margin-bottom:8px">💜</div>
+          No mood logs yet. Log your first mood!
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const moodData = {{ mood_counts|safe }};
+const labels = Object.keys(moodData);
+const values = Object.values(moodData);
+buildDoughnut('moodChart', labels, values,
+  ['#f59e0b','#8b5cf6','#06b6d4','#ef4444','#10b981']);
+</script>
+{% endblock %}
+{% endblock %}

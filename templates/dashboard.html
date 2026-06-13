@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – SunSync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="greeting">Hey {{ user.username }} {{ user.avatar or '🎓' }}</h1>
+  <div class="greeting-time" id="greeting-time"></div>
+</div>
+
+<!-- Stats Row -->
+<div class="grid-4" style="margin-bottom:24px">
+  <div class="stat-card stat-purple animate-in">
+    <div class="stat-icon">⏱️</div>
+    <div class="stat-label">Study Today</div>
+    <div class="stat-value">{{ study_today }}h</div>
+    <div class="stat-sub">Keep it up!</div>
+  </div>
+  <div class="stat-card stat-orange animate-in">
+    <div class="stat-icon">🔥</div>
+    <div class="stat-label">Day Streak</div>
+    <div class="stat-value">{{ user.streak_count or 0 }}</div>
+    <div class="stat-sub">days in a row</div>
+  </div>
+  <div class="stat-card stat-blue animate-in">
+    <div class="stat-icon">📚</div>
+    <div class="stat-label">Total Hours</div>
+    <div class="stat-value">{{ ((user.total_study_time or 0) / 3600)|round(1) }}</div>
+    <div class="stat-sub">all time</div>
+  </div>
+  <div class="stat-card stat-green animate-in">
+    <div class="stat-icon">💜</div>
+    <div class="stat-label">Current Mood</div>
+    <div class="stat-value" style="font-size:20px;-webkit-text-fill-color:unset">
+      {% if last_mood == 'Happy' %}😊 Happy
+      {% elif last_mood == 'Focused' %}🎯 Focused
+      {% elif last_mood == 'Tired' %}😴 Tired
+      {% elif last_mood == 'Stressed' %}😵 Stressed
+      {% elif last_mood == 'Relaxed' %}😌 Relaxed
+      {% else %}—{% endif %}
+    </div>
+    <div class="stat-sub"><a href="{{ url_for('mood') }}" style="color:var(--p3);text-decoration:none">Update →</a></div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- LEFT COLUMN -->
+  <div>
+    <!-- Weekly Goal -->
+    <div class="card animate-in" style="margin-bottom:20px">
+      <div class="section-title">🎯 Weekly Goal</div>
+      {% if goal %}
+        <div style="font-size:14px;color:var(--text-muted);margin-bottom:10px">{{ goal.goal_text or 'Study hard this week!' }}</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span style="color:var(--text-muted)">Progress</span>
+          <span style="color:var(--p3);font-weight:600">{{ goal.current_hours }}h / {{ goal.target_hours }}h</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:{{ [(goal.current_hours / goal.target_hours * 100), 100]|min }}%"></div>
+        </div>
+      {% else %}
+        <div style="font-size:14px;color:var(--text-muted);margin-bottom:14px">Set your study goal for this week!</div>
+      {% endif %}
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <input class="form-input" id="goal-text" placeholder="e.g. Master Calculus Chapter 5" style="flex:1"/>
+        <input class="form-input" id="goal-hours" type="number" placeholder="hrs" style="width:80px" value="10"/>
+        <button class="btn btn-primary btn-sm" onclick="saveGoal()">Save</button>
+      </div>
+    </div>
+
+    <!-- Daily Challenges -->
+    <div class="card animate-in" style="margin-bottom:20px">
+      <div class="section-title">⚡ Today's Challenges</div>
+      {% for c in challenges %}
+      <div class="challenge-card {{ 'done' if c.id in completed_ids else '' }}"
+           onclick="completeChallenge({{ c.id }}, this)" id="ch-{{ c.id }}">
+        <span class="challenge-icon">{{ c.icon }}</span>
+        <div>
+          <div class="challenge-title">{{ c.title }}</div>
+          <div class="challenge-desc">{{ c.description }}</div>
+        </div>
+        <span class="challenge-pts">{{ '✅' if c.id in completed_ids else '+' + c.points|string + 'pts' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Recent Sessions -->
+    <div class="card animate-in">
+      <div class="section-title">📚 Recent Study Sessions</div>
+      {% if recent %}
+        {% for s in recent %}
+        <div class="session-row">
+          <span style="font-size:20px">📗</span>
+          <div>
+            <div class="session-subject">{{ s.subject }}</div>
+            <div class="session-meta">{{ s.start_time[:10] }}</div>
+          </div>
+          <div class="session-duration">{{ (s.duration / 60)|round(1) }} min</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:24px;color:var(--text-dim)">
+          <div style="font-size:32px;margin-bottom:8px">🎯</div>
+          No sessions yet. Start your first focus session!
+        </div>
+      {% endif %}
+      <a href="{{ url_for('focus') }}" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px">
+        🚀 Start Focus Session
+      </a>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div>
+    <!-- Quick Mood -->
+    <div class="card animate-in" style="margin-bottom:20px">
+      <div class="section-title">💜 Quick Mood Check</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        {% for mood, emoji in [('Happy','😊'),('Focused','🎯'),('Tired','😴'),('Stressed','😵'),('Relaxed','😌')] %}
+        <a href="{{ url_for('mood') }}" style="text-decoration:none;flex:1;min-width:60px">
+          <div style="text-align:center;padding:10px 6px;border-radius:12px;background:var(--surface);border:1px solid var(--border);cursor:pointer;transition:all .2s;font-size:24px">
+            {{ emoji }}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      <a href="{{ url_for('mood') }}" style="font-size:13px;color:var(--p3);text-decoration:none">
+        Log detailed mood → 
+      </a>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="card animate-in">
+      <div class="section-title" style="justify-content:space-between">
+        🏆 Leaderboard
+        <a href="{{ url_for('leaderboard') }}" style="font-size:12px;color:var(--p3);text-decoration:none;font-weight:400">View all →</a>
+      </div>
+      {% for u in leaderboard %}
+      <div class="lb-row">
+        <span class="lb-rank {{ 'gold' if loop.index==1 else 'silver' if loop.index==2 else 'bronze' if loop.index==3 else '' }}">
+          {{ loop.index }}
+        </span>
+        <span class="lb-avatar">{{ u.avatar or '🎓' }}</span>
+        <div>
+          <div class="lb-name">{{ u.username }} {% if u.username == session.username %}<span class="badge badge-purple" style="font-size:10px">you</span>{% endif %}</div>
+          <div class="lb-streak">🔥 {{ u.streak_count }} day streak</div>
+        </div>
+        <div class="lb-hours">{{ ((u.total_study_time or 0)/3600)|round(1) }}h</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

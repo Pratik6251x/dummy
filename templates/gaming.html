@@ -1,0 +1,622 @@
+{% extends 'base.html' %}
+{% block title %}Gaming Zone — SunSync{% endblock %}
+{% block content %}
+
+<style>
+/* ── Gaming Zone Styles ─────────────────────────────────────────────────── */
+.gaming-header{
+  background:linear-gradient(135deg,rgba(249,115,22,.18),rgba(56,189,248,.12));
+  border:1px solid rgba(249,115,22,.25);
+  border-radius:var(--radius-lg);
+  padding:28px 32px;
+  margin-bottom:28px;
+  display:flex;align-items:center;gap:18px;
+}
+.gaming-header-icon{font-size:48px;filter:drop-shadow(0 0 20px rgba(249,115,22,.5));}
+.gaming-header h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;
+  background:linear-gradient(135deg,var(--p3),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.gaming-header p{color:var(--text-muted);font-size:14px;margin-top:4px;}
+
+.games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:32px;}
+.game-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:22px;
+  transition:all var(--trans);cursor:pointer;
+  position:relative;overflow:hidden;
+}
+.game-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(249,115,22,.06),transparent);
+  opacity:0;transition:opacity var(--trans);
+}
+.game-card:hover{border-color:var(--border-hov);transform:translateY(-3px);
+  box-shadow:0 12px 32px rgba(249,115,22,.18);}
+.game-card:hover::before{opacity:1;}
+.game-card-icon{font-size:36px;margin-bottom:10px;}
+.game-card h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;color:var(--text);margin-bottom:6px;}
+.game-card p{color:var(--text-muted);font-size:13px;line-height:1.5;}
+.game-badge{display:inline-block;background:rgba(52,211,153,.12);color:var(--cyan);
+  border:1px solid rgba(52,211,153,.25);border-radius:20px;
+  padding:3px 10px;font-size:11px;font-weight:600;margin-top:10px;}
+.btn-play{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:14px;padding:10px 20px;border-radius:12px;
+  background:linear-gradient(135deg,var(--p1),var(--p3));
+  color:#fff;font-weight:600;font-size:13px;border:none;cursor:pointer;
+  transition:opacity var(--trans);
+}
+.btn-play:hover{opacity:.85;}
+
+/* ── Game Modal ──────────────────────────────────────────────────────────── */
+.game-modal{
+  display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;
+}
+.game-modal.open{display:flex;}
+.game-window{
+  background:var(--bg2);border:1px solid rgba(249,115,22,.3);
+  border-radius:var(--radius-lg);padding:24px;
+  max-width:600px;width:95vw;max-height:90vh;overflow:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(249,115,22,.1);
+}
+.game-window-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px;
+}
+.game-window-header h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;
+  background:linear-gradient(135deg,var(--p3),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.close-game{background:rgba(255,255,255,.08);border:none;color:var(--text);
+  border-radius:10px;padding:8px 12px;cursor:pointer;font-size:16px;transition:all var(--trans);}
+.close-game:hover{background:rgba(239,68,68,.2);color:var(--red);}
+.score-bar{
+  display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;
+  background:rgba(255,255,255,.04);border-radius:12px;padding:10px 16px;
+}
+.score-item{display:flex;flex-direction:column;gap:2px;}
+.score-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);}
+.score-val{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;color:var(--p3);}
+canvas{border-radius:12px;border:1px solid rgba(255,255,255,.1);display:block;margin:0 auto;}
+.game-controls{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.ctrl-btn{padding:10px 22px;border-radius:12px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);font-weight:600;font-size:13px;cursor:pointer;
+  transition:all var(--trans);}
+.ctrl-btn:hover{background:var(--surface-hov);border-color:var(--border-hov);}
+.ctrl-btn.primary{background:linear-gradient(135deg,var(--p1),var(--p3));border-color:transparent;color:#fff;}
+.game-tip{margin-top:12px;text-align:center;color:var(--text-muted);font-size:12px;}
+
+/* Memory game */
+.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0;}
+.mem-card{
+  aspect-ratio:1;border-radius:12px;border:2px solid rgba(249,115,22,.25);
+  background:rgba(249,115,22,.08);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+  transition:all .25s;user-select:none;
+}
+.mem-card.flipped{background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.4);}
+.mem-card.matched{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.4);cursor:default;}
+.mem-card.hidden{opacity:0;}
+.mem-back{font-size:24px;pointer-events:none;}
+
+/* Reaction game */
+.reaction-arena{
+  border-radius:16px;border:1px solid var(--border);padding:20px;
+  text-align:center;min-height:240px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;
+  transition:background .2s;
+}
+.reaction-arena.wait{background:rgba(239,68,68,.08);}
+.reaction-arena.ready{background:rgba(52,211,153,.08);}
+.reaction-target{
+  width:100px;height:100px;border-radius:50%;display:none;
+  align-items:center;justify-content:center;font-size:36px;
+  cursor:pointer;transition:transform .15s;
+  background:linear-gradient(135deg,var(--p1),var(--p3));
+  box-shadow:0 0 30px var(--glow);
+}
+.reaction-target:hover{transform:scale(1.1);}
+.reaction-target.visible{display:flex;}
+.react-msg{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:var(--text);}
+.results-list{list-style:none;display:flex;flex-direction:column;gap:4px;width:100%;}
+.results-list li{background:rgba(255,255,255,.04);border-radius:8px;
+  padding:6px 12px;font-size:13px;color:var(--text-muted);
+  display:flex;justify-content:space-between;}
+.results-list li span{color:var(--cyan);font-weight:700;}
+</style>
+
+<!-- Header -->
+<div class="gaming-header">
+  <div class="gaming-header-icon">🎮</div>
+  <div>
+    <h1>Gaming Zone</h1>
+    <p>Take a break, de-stress, and recharge with fun mini-games. Play, score, relax! 🌅</p>
+  </div>
+</div>
+
+<!-- Game Cards -->
+<div class="games-grid">
+  <div class="game-card" onclick="openGame('snake')">
+    <div class="game-card-icon">🐍</div>
+    <h3>Snake</h3>
+    <p>Guide your snake to eat food and grow longer. Avoid hitting the walls or yourself!</p>
+    <span class="game-badge">Classic</span>
+    <br>
+    <button class="btn-play">▶ Play Now</button>
+  </div>
+  <div class="game-card" onclick="openGame('jump')">
+    <div class="game-card-icon">⚽</div>
+    <h3>Jumping Ball</h3>
+    <p>Keep the ball bouncing! Tap or press Space to keep it in the air and dodge obstacles.</p>
+    <span class="game-badge">Reflex</span>
+    <br>
+    <button class="btn-play">▶ Play Now</button>
+  </div>
+  <div class="game-card" onclick="openGame('memory')">
+    <div class="game-card-icon">🧠</div>
+    <h3>Memory Cards</h3>
+    <p>Flip cards to find matching pairs. Test and train your short-term memory!</p>
+    <span class="game-badge">Brain Boost</span>
+    <br>
+    <button class="btn-play">▶ Play Now</button>
+  </div>
+  <div class="game-card" onclick="openGame('reaction')">
+    <div class="game-card-icon">⚡</div>
+    <h3>Reaction Speed</h3>
+    <p>Tap the target the instant it appears. How fast are your reflexes?</p>
+    <span class="game-badge">Speed</span>
+    <br>
+    <button class="btn-play">▶ Play Now</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ SNAKE MODAL ═══════════════════ -->
+<div class="game-modal" id="modal-snake">
+  <div class="game-window">
+    <div class="game-window-header">
+      <h2>🐍 Snake</h2>
+      <button class="close-game" onclick="closeGame('snake')">✕ Close</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Score</span><span class="score-val" id="snake-score">0</span></div>
+      <div class="score-item"><span class="score-label">High Score</span><span class="score-val" id="snake-hi">0</span></div>
+      <div class="score-item"><span class="score-label">Level</span><span class="score-val" id="snake-level">1</span></div>
+    </div>
+    <canvas id="snake-canvas" width="460" height="380"></canvas>
+    <div class="game-controls">
+      <button class="ctrl-btn primary" id="snake-start-btn" onclick="snakeStart()">▶ Start</button>
+      <button class="ctrl-btn" onclick="closeGame('snake')">✕ Quit</button>
+    </div>
+    <p class="game-tip">🕹️ Arrow keys or WASD to steer • Eat 🍎 to grow • Don't crash!</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ JUMP MODAL ═══════════════════ -->
+<div class="game-modal" id="modal-jump">
+  <div class="game-window">
+    <div class="game-window-header">
+      <h2>⚽ Jumping Ball</h2>
+      <button class="close-game" onclick="closeGame('jump')">✕ Close</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Score</span><span class="score-val" id="jump-score">0</span></div>
+      <div class="score-item"><span class="score-label">Best</span><span class="score-val" id="jump-hi">0</span></div>
+    </div>
+    <canvas id="jump-canvas" width="460" height="340"></canvas>
+    <div class="game-controls">
+      <button class="ctrl-btn primary" id="jump-start-btn" onclick="jumpStart()">▶ Start</button>
+      <button class="ctrl-btn" onclick="closeGame('jump')">✕ Quit</button>
+    </div>
+    <p class="game-tip">🖱️ Click or Space to jump • Clear the orange pillars!</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ MEMORY MODAL ═══════════════════ -->
+<div class="game-modal" id="modal-memory">
+  <div class="game-window">
+    <div class="game-window-header">
+      <h2>🧠 Memory Cards</h2>
+      <button class="close-game" onclick="closeGame('memory')">✕ Close</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Moves</span><span class="score-val" id="mem-moves">0</span></div>
+      <div class="score-item"><span class="score-label">Pairs</span><span class="score-val" id="mem-pairs">0</span></div>
+      <div class="score-item"><span class="score-label">Best</span><span class="score-val" id="mem-best">—</span></div>
+    </div>
+    <div class="memory-grid" id="mem-grid"></div>
+    <div class="game-controls">
+      <button class="ctrl-btn primary" onclick="memoryNewGame()">🔄 New Game</button>
+      <button class="ctrl-btn" onclick="closeGame('memory')">✕ Quit</button>
+    </div>
+    <p class="game-tip">🃏 Click cards to flip • Match all 8 pairs to win!</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ REACTION MODAL ═══════════════════ -->
+<div class="game-modal" id="modal-reaction">
+  <div class="game-window">
+    <div class="game-window-header">
+      <h2>⚡ Reaction Speed</h2>
+      <button class="close-game" onclick="closeGame('reaction')">✕ Close</button>
+    </div>
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">Round</span><span class="score-val" id="react-round">0</span>/5</div>
+      <div class="score-item"><span class="score-label">Last</span><span class="score-val" id="react-last">—</span></div>
+      <div class="score-item"><span class="score-label">Avg</span><span class="score-val" id="react-avg">—</span></div>
+      <div class="score-item"><span class="score-label">Best</span><span class="score-val" id="react-best">—</span></div>
+    </div>
+    <div class="reaction-arena wait" id="react-arena">
+      <div class="reaction-target" id="react-target" onclick="reactClick()">☀️</div>
+      <div class="react-msg" id="react-msg">Press Start to begin</div>
+      <ul class="results-list" id="react-results"></ul>
+    </div>
+    <div class="game-controls">
+      <button class="ctrl-btn primary" id="react-start-btn" onclick="reactStart()">▶ Start</button>
+      <button class="ctrl-btn" onclick="closeGame('reaction')">✕ Quit</button>
+    </div>
+    <p class="game-tip">🎯 Click the ☀️ the instant it appears — 5 rounds total!</p>
+  </div>
+</div>
+
+<script>
+/* ─── Modal helpers ────────────────────────────────────────────────────── */
+function openGame(id){
+  document.getElementById('modal-'+id).classList.add('open');
+  document.body.style.overflow='hidden';
+  if(id==='memory' && document.getElementById('mem-grid').children.length===0) memoryNewGame();
+}
+function closeGame(id){
+  document.getElementById('modal-'+id).classList.remove('open');
+  document.body.style.overflow='';
+  if(id==='snake'){snakeStop();}
+  if(id==='jump'){jumpStop();}
+  if(id==='reaction'){reactStop();}
+}
+
+/* ══════════════════════ SNAKE GAME ══════════════════════════════════════ */
+(function(){
+  const CELL=20;
+  let canvas,ctx,snake,dir,nextDir,food,score,hiScore=0,level,speed,raf,running=false;
+  const colors={head:'#f97316',body:'#fb923c',food:'#ef4444',grid:'rgba(255,255,255,0.04)'};
+
+  window.snakeStart=function(){
+    canvas=document.getElementById('snake-canvas');
+    ctx=canvas.getContext('2d');
+    const W=canvas.width,H=canvas.height;
+    snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+    dir={x:1,y:0};nextDir={x:1,y:0};
+    score=0;level=1;speed=150;running=true;
+    placeFood();
+    updateUI();
+    document.addEventListener('keydown',snakeKey);
+    canvas.onclick=null;
+    if(raf)cancelAnimationFrame(raf);
+    loop();
+    document.getElementById('snake-start-btn').textContent='↺ Restart';
+  };
+
+  function loop(){
+    if(!running)return;
+    setTimeout(()=>{raf=requestAnimationFrame(()=>{step();loop();});},speed);
+  }
+
+  function step(){
+    dir=nextDir;
+    const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+    const W=canvas.width/CELL,H=canvas.height/CELL;
+    if(head.x<0||head.x>=W||head.y<0||head.y>=H||snake.some(s=>s.x===head.x&&s.y===head.y)){
+      gameOver();return;
+    }
+    snake.unshift(head);
+    if(head.x===food.x&&head.y===food.y){
+      score+=10*level;
+      if(score>=level*100){level++;speed=Math.max(60,speed-15);}
+      placeFood();
+    } else {snake.pop();}
+    draw();updateUI();
+  }
+
+  function draw(){
+    const W=canvas.width,H=canvas.height;
+    ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,W,H);
+    // grid
+    ctx.strokeStyle=colors.grid;ctx.lineWidth=1;
+    for(let x=0;x<W;x+=CELL){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=CELL){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    // food
+    ctx.fillStyle=colors.food;
+    ctx.shadowColor='#ef4444';ctx.shadowBlur=12;
+    ctx.beginPath();ctx.arc(food.x*CELL+CELL/2,food.y*CELL+CELL/2,CELL/2-2,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    // snake
+    snake.forEach((s,i)=>{
+      ctx.fillStyle=i===0?colors.head:colors.body;
+      if(i===0){ctx.shadowColor='#f97316';ctx.shadowBlur=14;}else{ctx.shadowBlur=0;}
+      roundRect(ctx,s.x*CELL+2,s.y*CELL+2,CELL-4,CELL-4,5);
+    });
+    ctx.shadowBlur=0;
+  }
+
+  function roundRect(c,x,y,w,h,r){
+    c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);
+    c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);c.lineTo(x+r,y+h);
+    c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.fill();
+  }
+
+  function placeFood(){
+    const W=canvas.width/CELL,H=canvas.height/CELL;
+    do{food={x:Math.floor(Math.random()*W),y:Math.floor(Math.random()*H)};}
+    while(snake.some(s=>s.x===food.x&&s.y===food.y));
+  }
+
+  function updateUI(){
+    document.getElementById('snake-score').textContent=score;
+    document.getElementById('snake-hi').textContent=hiScore;
+    document.getElementById('snake-level').textContent=level;
+  }
+
+  function gameOver(){
+    running=false;
+    if(score>hiScore)hiScore=score;
+    updateUI();
+    draw();
+    ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#fbbf24';ctx.font='bold 32px Plus Jakarta Sans';ctx.textAlign='center';
+    ctx.fillText('Game Over!',canvas.width/2,canvas.height/2-20);
+    ctx.fillStyle='#f5f0e8';ctx.font='16px Inter';
+    ctx.fillText('Score: '+score,canvas.width/2,canvas.height/2+18);
+    ctx.fillText('Press Restart to play again',canvas.width/2,canvas.height/2+46);
+    document.removeEventListener('keydown',snakeKey);
+  }
+
+  function snakeKey(e){
+    const map={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},
+               w:{x:0,y:-1},s:{x:0,y:1},a:{x:-1,y:0},d:{x:1,y:0},
+               W:{x:0,y:-1},S:{x:0,y:1},A:{x:-1,y:0},D:{x:1,y:0}};
+    const nd=map[e.key];
+    if(nd&&!(nd.x===-dir.x&&nd.y===-dir.y)){nextDir=nd;e.preventDefault();}
+  }
+
+  window.snakeStop=function(){
+    running=false;
+    if(raf)cancelAnimationFrame(raf);
+    document.removeEventListener('keydown',snakeKey);
+  };
+})();
+
+/* ══════════════════════ JUMPING BALL GAME ════════════════════════════════ */
+(function(){
+  let canvas,ctx,ball,pipes=[],score,hiScore=0,raf,running=false,started=false;
+  const GRAVITY=0.45,JUMP=-9,PIPE_W=52,PIPE_GAP=130,PIPE_SPEED=2.8;
+
+  window.jumpStart=function(){
+    canvas=document.getElementById('jump-canvas');
+    ctx=canvas.getContext('2d');
+    ball={x:80,y:canvas.height/2,vy:0,r:16};
+    pipes=[];score=0;running=true;started=false;
+    document.getElementById('jump-start-btn').textContent='↺ Restart';
+    canvas.onclick=doJump;
+    document.addEventListener('keydown',jumpKey);
+    if(raf)cancelAnimationFrame(raf);
+    loop();
+  };
+
+  function doJump(){if(running){started=true;ball.vy=JUMP;}}
+  function jumpKey(e){if(e.code==='Space'&&running){e.preventDefault();doJump();}}
+
+  function loop(){if(!running)return;raf=requestAnimationFrame(()=>{update();draw();loop();});}
+
+  function update(){
+    if(!started)return;
+    ball.vy+=GRAVITY;ball.y+=ball.vy;
+    const now=Date.now();
+    if(!pipes.length||pipes[pipes.length-1].x<canvas.width-190){
+      const top=50+Math.random()*(canvas.height-PIPE_GAP-100);
+      pipes.push({x:canvas.width,top,bot:top+PIPE_GAP,scored:false});
+    }
+    pipes.forEach(p=>{p.x-=PIPE_SPEED;
+      if(!p.scored&&p.x+PIPE_W<ball.x){p.scored=true;score++;updateJumpUI();}
+    });
+    pipes=pipes.filter(p=>p.x>-PIPE_W-10);
+    // collision
+    const r=ball.r-3;
+    if(ball.y-r<0||ball.y+r>canvas.height){jumpDie();return;}
+    for(const p of pipes){
+      if(ball.x+r>p.x&&ball.x-r<p.x+PIPE_W&&(ball.y-r<p.top||ball.y+r>p.bot)){jumpDie();return;}
+    }
+  }
+
+  function draw(){
+    const W=canvas.width,H=canvas.height;
+    // sky gradient
+    const grad=ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#0d0d1a');grad.addColorStop(1,'#13132b');
+    ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+    // pipes
+    pipes.forEach(p=>{
+      ctx.fillStyle='#f97316';
+      ctx.shadowColor='#f97316';ctx.shadowBlur=10;
+      ctx.fillRect(p.x,0,PIPE_W,p.top);
+      ctx.fillRect(p.x,p.bot,PIPE_W,H-p.bot);
+      ctx.shadowBlur=0;
+      // caps
+      ctx.fillStyle='#fb923c';
+      ctx.fillRect(p.x-4,p.top-16,PIPE_W+8,16);
+      ctx.fillRect(p.x-4,p.bot,PIPE_W+8,16);
+    });
+    // ball
+    ctx.shadowColor='#38bdf8';ctx.shadowBlur=20;
+    ctx.fillStyle='#38bdf8';
+    ctx.beginPath();ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    // start msg
+    if(!started){
+      ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#fbbf24';ctx.font='bold 22px Plus Jakarta Sans';ctx.textAlign='center';
+      ctx.fillText('Click or Space to Jump!',W/2,H/2);
+    }
+  }
+
+  function updateJumpUI(){
+    document.getElementById('jump-score').textContent=score;
+    if(score>hiScore){hiScore=score;document.getElementById('jump-hi').textContent=hiScore;}
+  }
+
+  function jumpDie(){
+    running=false;
+    if(score>hiScore){hiScore=score;}
+    updateJumpUI();
+    draw();
+    ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#fbbf24';ctx.font='bold 28px Plus Jakarta Sans';ctx.textAlign='center';
+    ctx.fillText('Oops! 💥',canvas.width/2,canvas.height/2-20);
+    ctx.fillStyle='#f5f0e8';ctx.font='15px Inter';
+    ctx.fillText('Score: '+score+'  Best: '+hiScore,canvas.width/2,canvas.height/2+14);
+    ctx.fillText('Restart to try again!',canvas.width/2,canvas.height/2+40);
+    canvas.onclick=null;
+    document.removeEventListener('keydown',jumpKey);
+  }
+
+  window.jumpStop=function(){
+    running=false;
+    if(raf)cancelAnimationFrame(raf);
+    canvas=document.getElementById('jump-canvas');
+    if(canvas)canvas.onclick=null;
+    document.removeEventListener('keydown',jumpKey);
+  };
+})();
+
+/* ══════════════════════ MEMORY GAME ═════════════════════════════════════ */
+(function(){
+  const EMOJIS=['🌅','🌙','⭐','🔥','💜','🎯','🚀','🌊'];
+  let cards=[],flipped=[],matched=0,moves=0,best=null,locked=false;
+
+  window.memoryNewGame=function(){
+    const grid=document.getElementById('mem-grid');
+    grid.innerHTML='';
+    cards=[];flipped=[];matched=0;moves=0;locked=false;
+    const pairs=[...EMOJIS,...EMOJIS].sort(()=>Math.random()-0.5);
+    pairs.forEach((emoji,i)=>{
+      const card=document.createElement('div');
+      card.className='mem-card';
+      card.dataset.emoji=emoji;card.dataset.idx=i;
+      card.innerHTML='<span class="mem-back">🌅</span>';
+      card.addEventListener('click',()=>memFlip(card));
+      grid.appendChild(card);
+      cards.push(card);
+    });
+    updateMemUI();
+  };
+
+  function memFlip(card){
+    if(locked||card.classList.contains('flipped')||card.classList.contains('matched'))return;
+    card.classList.add('flipped');
+    card.innerHTML=card.dataset.emoji;
+    flipped.push(card);
+    if(flipped.length===2){
+      moves++;
+      locked=true;
+      setTimeout(()=>{
+        if(flipped[0].dataset.emoji===flipped[1].dataset.emoji){
+          flipped.forEach(c=>c.classList.add('matched'));
+          matched++;
+          if(matched===8){
+            if(best===null||moves<best)best=moves;
+            setTimeout(()=>alert('🎉 Brilliant! You matched all pairs in '+moves+' moves!'),200);
+          }
+        } else {
+          flipped.forEach(c=>{c.classList.remove('flipped');c.innerHTML='<span class="mem-back">🌅</span>';});
+        }
+        flipped=[];locked=false;
+        updateMemUI();
+      },700);
+    }
+  }
+
+  function updateMemUI(){
+    document.getElementById('mem-moves').textContent=moves;
+    document.getElementById('mem-pairs').textContent=matched;
+    document.getElementById('mem-best').textContent=best===null?'—':best+' moves';
+  }
+})();
+
+/* ══════════════════════ REACTION GAME ════════════════════════════════════ */
+(function(){
+  let round=0,times=[],waiting=false,appeared=null,timeout=null,best=null;
+
+  window.reactStart=function(){
+    round=0;times=[];waiting=false;
+    document.getElementById('react-results').innerHTML='';
+    document.getElementById('react-round').textContent=0;
+    document.getElementById('react-last').textContent='—';
+    document.getElementById('react-avg').textContent='—';
+    document.getElementById('react-start-btn').textContent='↺ Restart';
+    nextRound();
+  };
+
+  function nextRound(){
+    if(round>=5){showFinal();return;}
+    const arena=document.getElementById('react-arena');
+    const target=document.getElementById('react-target');
+    const msg=document.getElementById('react-msg');
+    arena.className='reaction-arena wait';
+    target.classList.remove('visible');
+    msg.textContent='Get ready…';
+    waiting=true;
+    const delay=800+Math.random()*2200;
+    timeout=setTimeout(()=>{
+      if(!waiting)return;
+      arena.className='reaction-arena ready';
+      target.classList.add('visible');
+      appeared=Date.now();
+      msg.textContent='TAP NOW!';
+    },delay);
+  }
+
+  window.reactClick=function(){
+    if(!appeared)return;
+    const ms=Date.now()-appeared;
+    appeared=null;waiting=false;
+    times.push(ms);round++;
+    const avg=Math.round(times.reduce((a,b)=>a+b,0)/times.length);
+    if(best===null||ms<best)best=ms;
+    document.getElementById('react-last').textContent=ms+'ms';
+    document.getElementById('react-avg').textContent=avg+'ms';
+    document.getElementById('react-best').textContent=best+'ms';
+    document.getElementById('react-round').textContent=round;
+    const li=document.createElement('li');
+    li.innerHTML='Round '+round+' <span>'+ms+' ms</span>';
+    document.getElementById('react-results').prepend(li);
+    const arena=document.getElementById('react-arena');
+    arena.className='reaction-arena wait';
+    document.getElementById('react-target').classList.remove('visible');
+    document.getElementById('react-msg').textContent=ms<250?'⚡ Lightning fast!':ms<500?'👍 Nice!':'Try to be quicker!';
+    setTimeout(nextRound,900);
+  };
+
+  function showFinal(){
+    const avg=Math.round(times.reduce((a,b)=>a+b,0)/times.length);
+    const msg=document.getElementById('react-msg');
+    if(avg<250)msg.textContent='🏆 Superhuman reflexes! ('+avg+'ms avg)';
+    else if(avg<400)msg.textContent='⚡ Excellent! ('+avg+'ms avg)';
+    else if(avg<600)msg.textContent='👍 Good job! ('+avg+'ms avg)';
+    else msg.textContent='Keep practicing! ('+avg+'ms avg)';
+    document.getElementById('react-arena').className='reaction-arena';
+  }
+
+  window.reactStop=function(){
+    if(timeout)clearTimeout(timeout);
+    waiting=false;appeared=null;
+  };
+})();
+
+// Close modal on backdrop click
+document.querySelectorAll('.game-modal').forEach(m=>{
+  m.addEventListener('click',e=>{
+    if(e.target===m)closeGame(m.id.replace('modal-',''));
+  });
+});
+</script>
+
+{% endblock %}

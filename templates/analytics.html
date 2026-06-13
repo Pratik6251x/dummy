@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Analytics – SunSync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Analytics 📊</h1>
+  <p class="page-subtitle">Your study insights & progress overview</p>
+</div>
+
+<!-- Summary Stats -->
+<div class="grid-4" style="margin-bottom:24px">
+  <div class="stat-card stat-purple animate-in">
+    <div class="stat-icon">⏱️</div>
+    <div class="stat-label">Total Study Time</div>
+    <div class="stat-value">{{ ((user.total_study_time or 0)/3600)|round(1) }}h</div>
+    <div class="stat-sub">all time</div>
+  </div>
+  <div class="stat-card stat-orange animate-in">
+    <div class="stat-icon">🔥</div>
+    <div class="stat-label">Current Streak</div>
+    <div class="stat-value">{{ user.streak_count or 0 }}</div>
+    <div class="stat-sub">days</div>
+  </div>
+  <div class="stat-card stat-blue animate-in">
+    <div class="stat-icon">📅</div>
+    <div class="stat-label">Member Since</div>
+    <div class="stat-value" style="font-size:16px;-webkit-text-fill-color:unset;color:var(--blue)">
+      {{ user.created_at[:10] if user.created_at else '—' }}
+    </div>
+    <div class="stat-sub">joined</div>
+  </div>
+  <div class="stat-card stat-green animate-in">
+    <div class="stat-icon">🎯</div>
+    <div class="stat-label">Avg / Day</div>
+    <div class="stat-value">
+      {% set days = [(((user.created_at or '2024-01-01')[:10])|length), 1]|max %}
+      {{ ((user.total_study_time or 0) / 3600 / 7)|round(1) }}h
+    </div>
+    <div class="stat-sub">last 7 days</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Daily Study Bar Chart -->
+  <div class="card animate-in">
+    <div class="section-title">📈 Daily Study Time (Last 7 Days)</div>
+    <div class="chart-wrap">
+      <canvas id="dailyChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Subject Breakdown -->
+  <div class="card animate-in">
+    <div class="section-title">📚 Subject Breakdown</div>
+    <div class="chart-wrap">
+      <canvas id="subjectChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- Mood Trend -->
+<div class="card animate-in" style="margin-bottom:24px">
+  <div class="section-title">💜 Mood Timeline (Last 14 Logs)</div>
+  <div id="mood-timeline" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
+    <!-- rendered by JS -->
+  </div>
+</div>
+
+<!-- Productivity Insights -->
+<div class="card animate-in">
+  <div class="section-title">💡 Productivity Insights</div>
+  <div class="grid-3" id="insights-grid">
+    <div style="padding:16px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:14px">
+      <div style="font-size:28px;margin-bottom:8px">🔥</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;margin-bottom:4px">Best Streak</div>
+      <div style="font-size:24px;font-weight:800;color:var(--orange)">{{ user.streak_count or 0 }} days</div>
+    </div>
+    <div style="padding:16px;background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:14px">
+      <div style="font-size:28px;margin-bottom:8px">⚡</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;margin-bottom:4px">Focus Sessions</div>
+      <div style="font-size:24px;font-weight:800;color:var(--cyan)" id="session-count">—</div>
+    </div>
+    <div style="padding:16px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:14px">
+      <div style="font-size:28px;margin-bottom:8px">📊</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;margin-bottom:4px">This Week</div>
+      <div style="font-size:24px;font-weight:800;color:var(--green)" id="this-week">—</div>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const dailyData   = {{ daily_data|safe }};
+const subjectData = {{ subject_data|safe }};
+const moodTrend   = {{ mood_trend|safe }};
+
+// Daily bar chart
+const labels  = dailyData.map(d => d.date.slice(5));
+const minutes = dailyData.map(d => d.minutes);
+buildBarChart('dailyChart', labels, minutes, '#8b5cf6', '#3b82f6');
+
+// Subject doughnut
+const sLabels = Object.keys(subjectData);
+const sValues = Object.values(subjectData);
+if (sLabels.length > 0) {
+  buildDoughnut('subjectChart', sLabels, sValues,
+    ['#8b5cf6','#06b6d4','#10b981','#f59e0b','#ec4899','#6366f1']);
+} else {
+  document.getElementById('subjectChart').parentElement.innerHTML =
+    '<div style="text-align:center;padding:40px;color:var(--text-dim)">No sessions yet</div>';
+}
+
+// Mood Timeline
+const moodEmojis = {Happy:'😊',Focused:'🎯',Tired:'😴',Stressed:'😵',Relaxed:'😌'};
+const moodColors = {Happy:'var(--orange)',Focused:'var(--p3)',Tired:'var(--blue)',Stressed:'var(--red)',Relaxed:'var(--green)'};
+const tl = document.getElementById('mood-timeline');
+if (moodTrend.length === 0) {
+  tl.innerHTML = '<div style="color:var(--text-dim);font-size:14px">No mood data yet. Start logging your moods!</div>';
+} else {
+  tl.innerHTML = moodTrend.map(m => `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;
+      background:var(--surface);border:1px solid var(--border);border-radius:12px;min-width:70px">
+      <span style="font-size:24px">${moodEmojis[m.mood]||'💜'}</span>
+      <span style="font-size:11px;color:${moodColors[m.mood]||'var(--p3)'};font-weight:600">${m.mood}</span>
+      <span style="font-size:10px;color:var(--text-dim)">${m.day.slice(5)}</span>
+    </div>
+  `).join('');
+}
+
+// This week total
+const thisWeek = dailyData.reduce((a,d) => a + d.minutes, 0);
+document.getElementById('this-week').textContent = thisWeek.toFixed(0) + 'min';
+</script>
+{% endblock %}
+{% endblock %}

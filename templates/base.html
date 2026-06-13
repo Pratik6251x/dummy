@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{% block title %}SunSync{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+{% if session.user_id %}
+<meta name="user-streak" content="{{ session.get('streak','0') }}"/>
+<meta name="user-timer-default" content="{{ session.get('timer_default', 30) }}"/>
+{% endif %}
+</head>
+<body>
+
+{% if session.user_id %}
+<!-- ── Sidebar Nav ── -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-icon">🌅</span>
+    <span class="logo-text">SunSync</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint=='dashboard' %}active{% endif %}">
+      <span class="nav-icon">⚡</span><span>Dashboard</span></a></li>
+    <li><a href="{{ url_for('focus') }}" class="nav-item {% if request.endpoint=='focus' %}active{% endif %}">
+      <span class="nav-icon">🎯</span><span>Focus Mode</span></a></li>
+    <li><a href="{{ url_for('mood') }}" class="nav-item {% if request.endpoint=='mood' %}active{% endif %}">
+      <span class="nav-icon">💜</span><span>Mood Track</span></a></li>
+    <li><a href="{{ url_for('analytics') }}" class="nav-item {% if request.endpoint=='analytics' %}active{% endif %}">
+      <span class="nav-icon">📊</span><span>Analytics</span></a></li>
+    <li><a href="{{ url_for('weekly') }}" class="nav-item {% if request.endpoint=='weekly' %}active{% endif %}">
+      <span class="nav-icon">📅</span><span>Weekly</span></a></li>
+    <li><a href="{{ url_for('leaderboard') }}" class="nav-item {% if request.endpoint=='leaderboard' %}active{% endif %}">
+      <span class="nav-icon">🏆</span><span>Leaderboard</span></a></li>
+    <li><a href="{{ url_for('gaming') }}" class="nav-item {% if request.endpoint=='gaming' %}active{% endif %}">
+      <span class="nav-icon">🎮</span><span>Gaming Zone</span></a></li>
+    <li><a href="{{ url_for('profile') }}" class="nav-item {% if request.endpoint=='profile' %}active{% endif %}">
+      <span class="nav-icon">👤</span><span>Profile</span></a></li>
+    <li><a href="{{ url_for('account') }}" class="nav-item {% if request.endpoint=='account' %}active{% endif %}">
+      <span class="nav-icon">✏️</span><span>Edit Account</span></a></li>
+    <li><a href="{{ url_for('settings') }}" class="nav-item {% if request.endpoint=='settings' %}active{% endif %}">
+      <span class="nav-icon">⚙️</span><span>Settings</span></a></li>
+  </ul>
+  <a href="{{ url_for('logout') }}" class="nav-item logout-btn">
+    <span class="nav-icon">🚪</span><span>Logout</span>
+  </a>
+  {% if session.user_id %}
+  <div style="padding:14px 8px 0;border-top:1px solid var(--border);margin-top:8px">
+    <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Current Streak</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:18px">🔥</span>
+      <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;color:var(--orange)" id="sidebar-streak">—</span>
+      <span style="font-size:11px;color:var(--text-dim)">days</span>
+    </div>
+  </div>
+  {% endif %}
+</nav>
+<!-- Mobile topbar -->
+<div class="mobile-topbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <span class="logo-text">🌅 SunSync</span>
+  <button class="theme-toggle-mini" onclick="toggleTheme()">🌓</button>
+</div>
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+{% endif %}
+
+<main class="main-content {% if not session.user_id %}full-width{% endif %}">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+        <div class="flash-msg flash-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+
+{% if session.user_id %}
+<!-- ── Solaris Chatbot Widget ── -->
+<div id="solaris-bubble" onclick="toggleSolaris()" title="Chat with Solaris ☀️"
+     style="position:fixed;bottom:24px;right:24px;z-index:9999;
+            width:58px;height:58px;border-radius:50%;
+            background:linear-gradient(135deg,var(--p1),var(--p3));
+            display:flex;align-items:center;justify-content:center;
+            font-size:26px;cursor:pointer;
+            box-shadow:0 4px 24px var(--glow);
+            transition:transform .2s ease,box-shadow .2s ease;">
+  ☀️
+  <span id="solaris-unread"
+        style="position:absolute;top:-3px;right:-3px;
+               background:var(--red);color:#fff;border-radius:50%;
+               width:18px;height:18px;font-size:10px;font-weight:700;
+               display:none;align-items:center;justify-content:center;">1</span>
+</div>
+
+<div id="solaris-panel"
+     style="position:fixed;bottom:94px;right:24px;z-index:9998;
+            width:340px;max-height:490px;
+            background:rgba(13,13,26,.94);
+            border:1px solid rgba(251,146,60,.25);
+            border-radius:var(--radius-lg);
+            backdrop-filter:blur(28px);
+            display:none;flex-direction:column;
+            box-shadow:0 8px 40px rgba(0,0,0,.55),0 0 0 1px rgba(251,146,60,.08);">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;
+              border-bottom:1px solid rgba(255,255,255,.07);">
+    <div style="width:36px;height:36px;border-radius:50%;
+                background:linear-gradient(135deg,var(--p1),var(--p3));
+                display:flex;align-items:center;justify-content:center;font-size:18px;">☀️</div>
+    <div style="flex:1">
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;color:var(--p3)">Solaris</div>
+      <div style="font-size:11px;color:var(--text-muted)">Your sunrise study assistant</div>
+    </div>
+    <button onclick="toggleSolaris()"
+            style="background:none;border:none;color:var(--text-muted);
+                   font-size:18px;cursor:pointer;padding:4px;line-height:1;
+                   border-radius:6px;transition:background .2s"
+            onmouseenter="this.style.background='var(--surface-hov)'"
+            onmouseleave="this.style.background='none'">✕</button>
+  </div>
+
+  <!-- Messages -->
+  <div id="solaris-messages"
+       style="flex:1;overflow-y:auto;padding:14px;
+              display:flex;flex-direction:column;gap:10px;
+              min-height:220px;max-height:330px;">
+    <div class="sol-msg sol-bot">
+      Hi! I'm Solaris ☀️ — your SunSync study assistant. Ask me about Focus Mode, streaks, challenges, goals, or anything else!
+    </div>
+  </div>
+
+  <!-- Quick chips -->
+  <div style="padding:8px 14px;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.05)">
+    <button class="sol-chip" onclick="quickAsk('How does Focus Mode work?')">Focus Mode</button>
+    <button class="sol-chip" onclick="quickAsk('How do streaks work?')">Streaks</button>
+    <button class="sol-chip" onclick="quickAsk('Tell me about daily challenges')">Challenges</button>
+  </div>
+
+  <!-- Input -->
+  <div style="padding:10px 12px;border-top:1px solid rgba(255,255,255,.07);
+              display:flex;gap:8px;align-items:center;">
+    <input id="solaris-input" type="text" placeholder="Ask Solaris…"
+           style="flex:1;background:rgba(255,255,255,.07);
+                  border:1px solid rgba(255,255,255,.1);border-radius:10px;
+                  padding:9px 12px;font-size:13px;color:var(--text);
+                  outline:none;font-family:'Inter',sans-serif;
+                  transition:border-color .2s;"
+           onfocus="this.style.borderColor='rgba(249,115,22,.5)'"
+           onblur="this.style.borderColor='rgba(255,255,255,.1)'"
+           onkeydown="if(event.key==='Enter')sendSolaris()"/>
+    <button onclick="sendSolaris()"
+            style="background:linear-gradient(135deg,var(--p1),var(--p3));
+                   border:none;border-radius:10px;padding:9px 14px;
+                   color:#fff;font-size:16px;cursor:pointer;
+                   transition:opacity .2s;flex-shrink:0;"
+            onmouseenter="this.style.opacity='.85'"
+            onmouseleave="this.style.opacity='1'">➤</button>
+  </div>
+</div>
+
+<style>
+.sol-msg{padding:9px 13px;border-radius:13px;font-size:13px;line-height:1.55;max-width:92%;word-break:break-word;}
+.sol-bot{background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.2);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;}
+.sol-user{background:linear-gradient(135deg,rgba(249,115,22,.22),rgba(251,191,36,.14));border:1px solid rgba(251,191,36,.2);color:var(--text);align-self:flex-end;border-bottom-right-radius:4px;}
+.sol-typing{background:rgba(251,146,60,.06);border:1px solid rgba(251,146,60,.1);color:var(--text-muted);font-style:italic;align-self:flex-start;}
+.sol-chip{background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);color:var(--p3);border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
+.sol-chip:hover{background:rgba(249,115,22,.2);border-color:var(--p1);}
+#solaris-messages::-webkit-scrollbar{width:4px;}
+#solaris-messages::-webkit-scrollbar-thumb{background:rgba(251,146,60,.3);border-radius:4px;}
+#solaris-bubble:hover{transform:scale(1.1);box-shadow:0 6px 30px var(--glow);}
+</style>
+
+<script>
+let solarisOpen = false;
+let solarisHistory = [];
+
+function toggleSolaris() {
+  solarisOpen = !solarisOpen;
+  const panel  = document.getElementById('solaris-panel');
+  const unread = document.getElementById('solaris-unread');
+  panel.style.display = solarisOpen ? 'flex' : 'none';
+  if (solarisOpen) {
+    unread.style.display = 'none';
+    setTimeout(() => document.getElementById('solaris-input').focus(), 100);
+    scrollSolaris();
+  }
+}
+
+function scrollSolaris() {
+  const msgs = document.getElementById('solaris-messages');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendMsg(text, role) {
+  const msgs = document.getElementById('solaris-messages');
+  const div  = document.createElement('div');
+  div.className = 'sol-msg ' + (role === 'user' ? 'sol-user' : 'sol-bot');
+  div.textContent = text;
+  msgs.appendChild(div);
+  scrollSolaris();
+  return div;
+}
+
+function quickAsk(text) {
+  document.getElementById('solaris-input').value = text;
+  sendSolaris();
+}
+
+async function sendSolaris() {
+  const inp  = document.getElementById('solaris-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  appendMsg(text, 'user');
+  solarisHistory.push({ role: 'user', content: text });
+
+  const msgs   = document.getElementById('solaris-messages');
+  const typing = document.createElement('div');
+  typing.className = 'sol-msg sol-typing';
+  typing.textContent = 'Solaris is thinking…';
+  msgs.appendChild(typing);
+  scrollSolaris();
+
+  try {
+    const res  = await fetch('/api/chat', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ messages: solarisHistory })
+    });
+    const data = await res.json();
+    typing.remove();
+    const reply = data.reply || "Sorry, I couldn't get a response right now.";
+    appendMsg(reply, 'bot');
+    solarisHistory.push({ role: 'assistant', content: reply });
+    if (solarisHistory.length > 20) solarisHistory = solarisHistory.slice(-20);
+  } catch (err) {
+    typing.remove();
+    appendMsg("Connection hiccup — please try again! ☀️", 'bot');
+  }
+}
+
+// Show unread badge after 4s if not opened
+setTimeout(() => {
+  if (!solarisOpen) {
+    const u = document.getElementById('solaris-unread');
+    if (u) { u.style.display = 'flex'; }
+  }
+}, 4000);
+</script>
+{% endif %}
+
+</body>
+</html>

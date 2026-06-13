@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Register – SunSync{% endblock %}
+{% block content %}
+<div class="stars"></div>
+<div class="auth-wrap">
+  <div class="auth-card animate-in">
+    <div class="auth-logo">
+      <span style="font-size:48px">🌙</span>
+    </div>
+    <h2 class="auth-title">Create Account</h2>
+    <p class="auth-sub">Start your productivity journey today</p>
+
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" type="text" name="username" placeholder="Choose a username" required autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" name="email" placeholder="your@email.com" required autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" name="password" placeholder="Create a strong password" required autocomplete="new-password" minlength="6"/>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px">
+        ✨ Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
